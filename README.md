@@ -50,9 +50,9 @@ Your Google Sheet must contain the following columns:
 
   productName       productUrl                          cssSelector       targetPrice
   ------------- ------------------------------- ------------- -------------
-  Product A         https://example.com/product-a       span.price        499
+  Product A             https://example.com/product-a           span.price          499
 
-  Product B         https://example.com/product-b       div.price         999
+  Product B             https://example.com/product-b           div.price           999
 
 ### Column Descriptions
 
