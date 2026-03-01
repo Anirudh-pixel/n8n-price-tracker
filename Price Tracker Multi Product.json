@@ -1,0 +1,383 @@
+{
+  "name": "Price Tracker Multi Product",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */6 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1120,
+        -496
+      ],
+      "id": "fb13fc1d-8a1e-4963-84a5-34604bafff2c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.productUrl}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -560,
+        -272
+      ],
+      "id": "ae4167c9-6de0-4d4e-9577-8888fc27ab9b",
+      "name": "HTTP Request",
+      "notesInFlow": false,
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "rawPrice",
+              "cssSelector": "={{$json.cssSelector}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        -368
+      ],
+      "id": "49b83ff7-8732-48eb-8e3d-9ba59383d1c8",
+      "name": "HTML",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Football Gear",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DrzOnqelexaNAHvtY_uvy1fLJkmMuCKDYlLz0sWDugQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DrzOnqelexaNAHvtY_uvy1fLJkmMuCKDYlLz0sWDugQ/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -976,
+        -496
+      ],
+      "id": "045b441a-bc32-4164-9708-4f9ffcb19843",
+      "name": "Get row(s) in sheet"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -752,
+        -432
+      ],
+      "id": "eb4db5a3-017f-4cc0-b15b-a3011a525c4a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -400,
+        -368
+      ],
+      "id": "42442795-5b0f-4111-af78-66380379c26a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c85d9cb0-2de5-4419-a01a-4e9553b12ecd",
+              "name": "status",
+              "value": "processed",
+              "type": "string"
+            },
+            {
+              "id": "df4001cb-8117-4f7d-a247-8f374197c6b0",
+              "name": "productUrl",
+              "value": "={{ $('Merge').item.json.productUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "f758f464-9049-46ac-b478-6e25543e9e9e",
+              "name": "targetPrice",
+              "value": "={{ $('Merge').item.json.targetPrice }}",
+              "type": "string"
+            },
+            {
+              "id": "6d788e5f-f8ef-4e83-955c-f4fbd17db4dc",
+              "name": "rawPrice",
+              "value": "={{ $('Cleaning RawPrice').item.json.rawPrice }}",
+              "type": "string"
+            },
+            {
+              "id": "36a42fd7-807d-4fa0-ac1b-c9dea84a4342",
+              "name": "notified",
+              "value": "={{ $json.ok ? true : false }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        -192
+      ],
+      "id": "30085e3c-2346-4031-a4a6-e17bcac03b16",
+      "name": "MARK"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "04e60690-3fa4-4aac-ae51-552b72c7ad61",
+              "leftValue": "={{ Number($json.rawPrice) }}",
+              "rightValue": "={{ Number($('Merge').item.json.targetPrice) }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        -352
+      ],
+      "id": "b7fd097b-9f0a-416c-ab49-1b053e73c9b5",
+      "name": "Compare Price",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f91cf269-fa3e-491f-8c37-cd292839b933",
+              "name": "rawPrice",
+              "value": "={{Number($json[\"rawPrice\"].replace(/[^0-9.]/g, \"\").replace(/^(\\.)+/, \"\"))}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": "",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -64,
+        -368
+      ],
+      "id": "aa98d0b1-510d-4906-bd04-99ee9f6ce84c",
+      "name": "Cleaning RawPrice"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🚨 Price Drop Alert! \nThe Product : {{ $('Merge').item.json.productName }} is available.\nCurrent price: ₹ {{ $('Cleaning RawPrice').item.json.rawPrice }}\n\nBuy now before it increases!\n\nLink to the website is below 👇\n{{ $('Merge').item.json.productUrl }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        352,
+        -368
+      ],
+      "id": "0098d584-eeae-4647-8c6b-9618c0c9ce14",
+      "name": "Notify User",
+      "webhookId": "d496bc25-25e1-44f0-9124-4654adfa13de"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Cleaning RawPrice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Price": {
+      "main": [
+        [
+          {
+            "node": "Notify User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MARK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaning RawPrice": {
+      "main": [
+        [
+          {
+            "node": "Compare Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MARK": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify User": {
+      "main": [
+        [
+          {
+            "node": "MARK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "ab2c8a0b-1d4b-4f1d-9157-178487344565",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8a0151ee87afd8a4446e8de6d8fd0197d084bc7a928aeaa3aba77f6457422c63"
+  },
+  "id": "1gF4lnbYcbqKCFXO",
+  "tags": []
+}
